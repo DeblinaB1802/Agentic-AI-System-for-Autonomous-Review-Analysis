@@ -2,14 +2,16 @@ import re
 import json
 from Core.model_runner import run_llm_model
 
-class ReviewOverviewAgent:
-    def __init__(self, model: str = "deepseek-r1"):
+class USPDectectorAgent:
+    def __init__(self, model: str = "gpt-3.5-turbo"):
         self.model = model
 
     @staticmethod
-    def build_adaptive_prompt(product_memory, overall_sentiment, overall_sentiment_score):
+    def build_adaptive_prompt(product_memory):
 
         product_name = product_memory.product_name
+        overall_sentiment = product_memory.overall_sentiment
+        overall_sentiment_score = product_memory.overall_sentiment_score
         usps = sorted(product_memory.usps.items(), key = lambda item: item[1], reverse=True)
         usps_justification = product_memory.usp_justification
 
@@ -84,9 +86,9 @@ class ReviewOverviewAgent:
         """
         return prompt
     
-    def create_review_summary(self, product_memory, overall_sentiment, overall_sentiment_score):
-        prompt = self.build_adaptive_prompt(product_memory, overall_sentiment, overall_sentiment_score)
-        response = run_llm_model(self.model, prompt, max_retries=5)
+    def create_review_summary(self, product_memory):
+        prompt = self.build_adaptive_prompt(product_memory)
+        response, execution_time = run_llm_model(self.model, prompt, max_retries=5)
 
         try:
             cleaned_response = re.findall(r"\{.*?\}", response, flags=re.DOTALL)
@@ -98,15 +100,15 @@ class ReviewOverviewAgent:
                 return {
                 "top_usps": [],
                 "model_confidence": 0.0
-            }
+            }, execution_time
             else:
                 result["top_usps"] = [usp for usp in result["top_usps"] if usp['model_confidence'] > 0.85]
                 result["top_usps"] = sorted(result["top_usps"], key=lambda x: x["positive_mentions"], reverse=True)
-                return result
+                return result, execution_time
         
         except (json.JSONDecodeError, IndexError) as e:
-            print(f"Failed to parse review summary: {e}")
+            print(f"Failed to parse through LLM output: {e}")
             return {
             "top_usps": [],
             "model_confidence": 0.0
-        }
+        }, execution_time
