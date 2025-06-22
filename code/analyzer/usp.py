@@ -4,11 +4,18 @@ from Core.model_runner import run_llm_model
 
 class USPDectectorAgent:
     def __init__(self, model: str = "gpt-3.5-turbo"):
+        """
+        Initializes the USPDetectorAgent with a specified LLM model.
+        This model will be used to identify and summarize top praised features (USPs) from reviews.
+        """
         self.model = model
 
     @staticmethod
     def build_adaptive_prompt(product_memory):
-
+        """
+        Constructs a structured prompt for the LLM to extract top USPs from customer review data.
+        Includes product metadata, USP frequencies, and justifications to guide high-quality extraction.
+        """
         product_name = product_memory.product_name
         overall_sentiment = product_memory.overall_sentiment
         overall_sentiment_score = product_memory.overall_sentiment_score
@@ -87,6 +94,10 @@ class USPDectectorAgent:
         return prompt
     
     def create_review_summary(self, product_memory):
+        """
+        Sends the adaptive USP extraction prompt to the LLM and parses its response.
+        Filters and returns top USPs with high confidence, or returns empty if confidence is too low.
+        """
         prompt = self.build_adaptive_prompt(product_memory)
         response, execution_time = run_llm_model(self.model, prompt, max_retries=5)
 
