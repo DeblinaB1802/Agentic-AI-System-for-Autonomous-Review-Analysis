@@ -10,10 +10,17 @@ from Core.model_runner import run_llm_model
 
 class TrendAnalyzerAgent:
     def __init__(self, model: str = "gpt-3.5-turbo"):
+        """
+        Initialize the trend analyzer with a specified LLM model.
+        """
         self.model = model
 
     @staticmethod
     def prepare_data(product_memory, time_span: str):
+        """
+        Prepares product history and sentiment scores for a given time span (e.g., month, quarter, year).
+        Returns formatted history text for prompting and a dictionary of sentiment scores per month.
+        """
         sorted_data = sorted(product_memory.monthly_report.items(), reverse=True)
 
         TIME_SPREAD = {
@@ -49,7 +56,10 @@ class TrendAnalyzerAgent:
 
     @staticmethod
     def build_adaptive_prompt(product_history: str):
-
+        """
+        Constructs a detailed LLM prompt to analyze sentiment trends using monthly review data.
+        Includes instructions, product metadata, and example outputs in JSON format.
+        """
         prompt = f"""
         You are an intelligent analytics assistant. Your task is to analyze the historical customer sentiment data of a product over time.
 
@@ -98,6 +108,10 @@ class TrendAnalyzerAgent:
         return prompt
     
     def analyze_trend(self, product_memory, time_span: str):
+        """
+        Performs sentiment trend analysis by calling the LLM with a tailored prompt.
+        Returns the trend summary, confidence score, and dictionary of sentiment scores per month.
+        """
         product_history, trend_dict = self.prepare_data(product_memory, time_span)
 
         if product_history and trend_dict:
@@ -123,7 +137,10 @@ class TrendAnalyzerAgent:
             }, {}, 0.0
     
     def compute_trend_metrics(self, trend_dict):
-
+        """
+        Computes quantitative trend metrics such as slope, volatility, and max-min delta
+        from monthly sentiment scores to support statistical trend understanding.
+        """
         df = pd.DataFrame(list(trend_dict.items()), columns=['month', 'sentiment_score'])
         if isinstance(df["month"].iloc[0], str):
             df["month"] = pd.to_datetime(df["month"], format="%Y-%m", errors="coerce")
@@ -145,6 +162,10 @@ class TrendAnalyzerAgent:
 
     
     def visualize_trend(self, df, trend_metrics):
+        """
+        Generates an interactive Plotly line chart showing monthly sentiment scores.
+        Annotates the plot with trend metrics including slope, volatility, and delta.
+        """
         if trend_metrics:
             fig = px.line(
                 df,
