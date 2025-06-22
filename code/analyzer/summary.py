@@ -3,13 +3,19 @@ import json
 from Core.model_runner import run_llm_model
 
 class ReviewOverviewAgent:
-    def __init__(self, model: str = "deepseek-r1"):
+    def __init__(self, model: str = "gpt-3.5-turbo"):
+        """Initializes the review overview agent with a specified LLM model."""
         self.model = model
 
     @staticmethod
-    def build_adaptive_prompt(product_memory, overall_sentiment, overall_sentiment_score):
-
+    def build_adaptive_prompt(product_memory):
+        """
+        Builds a detailed prompt for summarizing product reviews using sentiment trends,
+        top praised features (USPs), and common issues from product memory.
+        """
         product_name = product_memory.product_name
+        overall_sentiment = product_memory.overall_sentiment
+        overall_sentiment_score = product_memory.overall_sentiment_score
         usps = sorted(product_memory.usps.items(), key = lambda item: item[1], reverse=True)
         issues = sorted(product_memory.issues.items(), key = lambda item: item[1], reverse=True)
         usps_justification = product_memory.usp_justification
@@ -87,16 +93,23 @@ class ReviewOverviewAgent:
         """
         return prompt
     
-    def create_review_summary(self, product_memory, overall_sentiment, overall_sentiment_score):
-        prompt = self.build_adaptive_prompt(product_memory, overall_sentiment, overall_sentiment_score)
-        response = run_llm_model(self.model, prompt, max_retries=5)
+    def create_review_summary(self, product_memory):
+        """
+        Generates a JSON-formatted review summary using LLM output based on
+        the product's review memory and contextual metadata.
+        """
+        prompt = self.build_adaptive_prompt(product_memory)
+        response, execution_time = run_llm_model(self.model, prompt, max_retries=5)
+
         try:
             cleaned_response = re.findall(r"\{.*?\}", response, flags=re.DOTALL)
-            result = json.loads(cleaned_response[0])
-            return result
+            if cleaned_response:
+                result = json.loads(cleaned_response[0])
+                return result, execution_time
+            
         except (json.JSONDecodeError, IndexError) as e:
-            print(f"Failed to parse review summary: {e}")
+            print(f"Failed to parse through LLM output: {e}")
             return {
             "summary": "",
             "model_confidence": 0.0
-        }
+        }, execution_time
