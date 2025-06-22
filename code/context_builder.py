@@ -1,7 +1,10 @@
 #context_builder.py
 
 def get_quality_score(row, helpfulness_ratio):
-
+    """
+    Computes a review quality score based on verification status, helpfulness, and review length.
+    Returns a float score between 0.0 and 1.0.
+    """
     quality_score = 0.0
     if row['verified_purchase']:
         quality_score += 0.3
@@ -10,11 +13,12 @@ def get_quality_score(row, helpfulness_ratio):
     if row['review_length'].str.len() > 150:
         quality_score += 0.3
     quality_score = min(quality_score+0.2, 1.0)
-
     return quality_score
 
 def get_persona_mode(sentiment_trend, quality_score):
-
+    """
+    Determines persona mode (Critical, Optimistic, Balanced) based on sentiment trend and quality score.
+    """
     if sentiment_trend == "negative" and quality_score > 0.6:
         persona_mode = "Critical"
     elif sentiment_trend == "positive" and quality_score > 0.6:
@@ -24,7 +28,10 @@ def get_persona_mode(sentiment_trend, quality_score):
     return persona_mode
 
 def build_context(row, memory):
-
+    """
+    Builds a structured context dictionary combining review metadata, memory trends, and derived metrics.
+    Used as input for downstream analysis or LLM tasks.
+    """
     helpfulness_ratio = row['helpful_votes']/row['total_votes'] if row['total_votes'] > 0 else 0.0
 
     quality_score = get_quality_score(row, helpfulness_ratio)
