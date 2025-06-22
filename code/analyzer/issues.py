@@ -2,14 +2,22 @@ import re
 import json
 from Core.model_runner import run_llm_model
 
-class ReviewOverviewAgent:
-    def __init__(self, model: str = "deepseek-r1"):
+class IssueDetectorAgent:
+    def __init__(self, model: str = "gpt-3.5-turbo"):
+        """
+        Initializes the IssueDetectorAgent with a specified LLM model.
+        """
         self.model = model
 
     @staticmethod
-    def build_adaptive_prompt(product_memory, overall_sentiment, overall_sentiment_score):
-
+    def build_adaptive_prompt(product_memory):
+        """
+        Builds a structured LLM prompt for extracting the top 3 negatively mentioned product issues.
+        It includes product metadata, issue frequencies, and customer-quoted justifications to guide reasoning.
+        """
         product_name = product_memory.product_name
+        overall_sentiment = product_memory.overall_sentiment
+        overall_sentiment_score = product_memory.overall_sentiment_score
         issues = sorted(product_memory.issues.items(), key = lambda item: item[1], reverse=True)
         issues_justification = product_memory.issue_justification
 
@@ -87,9 +95,13 @@ class ReviewOverviewAgent:
 
         return prompt
     
-    def create_review_summary(self, product_memory, overall_sentiment, overall_sentiment_score):
-        prompt = self.build_adaptive_prompt(product_memory, overall_sentiment, overall_sentiment_score)
-        response = run_llm_model(self.model, prompt, max_retries=5)
+    def create_review_summary(self, product_memory):
+        """
+        Sends the adaptive prompt to the LLM and parses its JSON response to extract high-confidence issues.
+        Filters out weak results and returns a summary of the top issues based on frequency and confidence.
+        """
+        prompt = self.build_adaptive_prompt(product_memory)
+        response, execution_time = run_llm_model(self.model, prompt, max_retries=5)
 
         try:
             cleaned_response = re.findall(r"\{.*?\}", response, flags=re.DOTALL)
@@ -101,15 +113,15 @@ class ReviewOverviewAgent:
                 return {
                 "top_issues": [],
                 "model_confidence": 0.0
-            }
+            }, execution_time
             else:
                 result["top_issues"] = [issue for issue in result["top_issues"] if issue['model_confidence'] > 0.85]
                 result["top_issues"] = sorted(result["top_issues"], key=lambda x: x["negative_mentions"], reverse=True)
-                return result
+                return result, execution_time
         
         except (json.JSONDecodeError, IndexError) as e:
             print(f"Failed to parse through LLM output: {e}")
             return {
             "top_issues": [],
             "model_confidence": 0.0
-        }
+        }, execution_time
