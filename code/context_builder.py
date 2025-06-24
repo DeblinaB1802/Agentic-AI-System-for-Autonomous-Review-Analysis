@@ -9,19 +9,20 @@ def get_quality_score(row, helpfulness_ratio):
     if row['verified_purchase']:
         quality_score += 0.3
     if helpfulness_ratio >= 0.6:
-        quality_score += 0.2
-    if row['review_length'].str.len() > 150:
         quality_score += 0.3
+    if row['review_length'] > 150:
+        quality_score += 0.2
     quality_score = min(quality_score+0.2, 1.0)
+
     return quality_score
 
 def get_persona_mode(sentiment_trend, quality_score):
     """
     Determines persona mode (Critical, Optimistic, Balanced) based on sentiment trend and quality score.
     """
-    if sentiment_trend == "negative" and quality_score > 0.6:
+    if sentiment_trend == "negative" and quality_score > 0.7:
         persona_mode = "Critical"
-    elif sentiment_trend == "positive" and quality_score > 0.6:
+    elif sentiment_trend == "positive" and quality_score > 0.7:
         persona_mode = "Optimistic"
     else:
         persona_mode = "Balanced"
@@ -43,7 +44,7 @@ def build_context(row, memory):
     persona_mode = get_persona_mode(sentiment_trend, quality_score)
 
     return {
-        "verified_purchase" : bool(row['verfied_purchase']),
+        "verified_purchase" : bool(row['verified_purchase']),
         "rating" : int(row['rating']),
         "review_length" : int(row['review_length']),
         "helpfulness_helpfulness_ratio" : helpfulness_ratio,
@@ -53,7 +54,6 @@ def build_context(row, memory):
         "sentiment_trend" : sentiment_trend,
         "recent_issues" : recent_issues,
         "top_usps" : top_usps,
-        "purchase_date" : row['purchase_date'],
         "review_date" : row['review_date'],
-        "reviewer_name" : row["reviewer_name"]
+        "reviewer_name" : row["customer_name"]
     }  
