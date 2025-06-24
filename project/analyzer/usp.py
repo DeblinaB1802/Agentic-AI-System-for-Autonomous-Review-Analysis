@@ -103,7 +103,7 @@ class USPDectectorAgent:
 
         try:
             if response:
-                result = json.loads(response[0])
+                result = json.loads(response)
 
             if result['model_confidence'] < 0.8:
                 print("No strong USPs exist.")
