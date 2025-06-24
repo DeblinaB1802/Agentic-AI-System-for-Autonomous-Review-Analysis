@@ -85,6 +85,7 @@ if uploaded_file:
     #Data Quality Parameter
     with st.expander("📊 Data Quality Parameter", expanded=False):
         st.json(st.session_state.quality_parameter)
+        print(tasks)
 
     # Validate Data Completeness
     if tasks == []:
@@ -228,7 +229,7 @@ if uploaded_file:
     # Trend Chart
     with st.expander("📈 Sentiment Trend Over Time", expanded=False):
         if st.session_state.product_memory is not None:
-            trend_result, trend_dict, _ = agent.TrendAnalyzerAgent.analyze_trend(st.session_state.product_memory, "quarter")
+            trend_result, trend_dict, _ = agent.TrendAnalyzerAgent.analyze_trend(st.session_state.product_memory, "historical")
             df_trend, metrics = agent.TrendAnalyzerAgent.compute_trend_metrics(trend_dict)
 
             # Display chart
@@ -247,12 +248,12 @@ if uploaded_file:
             html_block = f"""
                 <div style="background-color: #1e1e1e; border-left: 5px solid #60a5fa;
                             padding: 1rem 1.2rem; border-radius: 10px; margin-top: 1rem;">
+                    <p style="margin-top: 0.5rem; color: #e5e7eb; line-height: 1.5;">
+                        {trend_result["trend_analysis_report"]}
+                    </p>
                     <p style="margin: 0; font-size: 0.9rem; color: #9ca3af;">
                         🤖 <strong>Model Confidence:</strong> 
                         <span style="color: {confidence_color};">{confidence:.2f}</span>
-                    </p>
-                    <p style="margin-top: 0.5rem; color: #e5e7eb; line-height: 1.5;">
-                        {trend_result["trend_analysis_report"]}
                     </p>
                 </div>
             """
