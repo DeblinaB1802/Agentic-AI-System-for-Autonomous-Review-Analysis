@@ -104,9 +104,8 @@ class IssueDetectorAgent:
         response, execution_time = run_llm_model(self.model, prompt, max_retries=5)
 
         try:
-            cleaned_response = re.findall(r"\{.*?\}", response, flags=re.DOTALL)
-            if cleaned_response:
-                result = json.loads(cleaned_response[0])
+            if response:
+                result = json.loads(response)
 
             if result['model_confidence'] < 0.8:
                 print("No strong issues exist.")
